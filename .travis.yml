@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t chatreesr/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true chatreesr/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t chatreesr/multi-client ./client
+  - docker build -t chatreesr/multi-server ./server
+  - docker build -t chatreesr/multi-nginx ./nginx
+  - docker build -t chatreesr/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push chatreesr/multi-client
+  - docker push chatreesr/multi-nginx
+  - docker push chatreesr/multi-server
+  - docker push chatreesr/multi-worker
